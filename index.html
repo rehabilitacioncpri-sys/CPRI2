@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CPRI | Control de Pacientes</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f7fa;color:#17344b}
+header{background:#0d5c8a;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;gap:15px;align-items:center}
+h1,h2,h3{margin-top:0}.wrap{max-width:1200px;margin:auto;padding:18px}
+nav{background:#fff;padding:10px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid #ddd}
+button{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer}.nav{background:#e7f1f7;color:#0d5c8a}.nav.on,.primary{background:#0d5c8a;color:white}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.card,.panel{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 9px #0001;margin-bottom:16px}.num{font-size:30px;font-weight:800;margin-top:8px}
+.view{display:none}.view.on{display:block}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+label{font-size:13px;font-weight:bold}input,select{width:100%;padding:10px;border:1px solid #ccd6df;border-radius:7px;margin-top:5px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #e4e9ed;text-align:left;font-size:14px}
+.status{padding:6px 9px;border-radius:18px;background:#e7f1f7;color:#0d5c8a;font-size:12px}.ok{background:#e8f6ed;color:#17733d}.err{background:#fdecec;color:#a22}
+#login{max-width:430px;margin:70px auto}.muted{color:#657583}
+</style>
+</head>
+<body>
+<div id="login" class="panel">
+<h2>CPRI</h2><p>Control de pacientes y asistencia</p>
+<label>Correo de acceso</label><input id="email" type="email" placeholder="correo@ejemplo.com">
+<label style="display:block;margin-top:10px">Contraseña</label><input id="pass" type="password" placeholder="Contraseña">
+<div class="actions"><button class="primary" onclick="login()">Entrar</button><button onclick="signup()">Crear cuenta</button></div>
+<p id="loginMsg" class="muted"></p>
+</div>
+<div id="app" style="display:none">
+<header><div><h1>CPRI — Control de Pacientes</h1><small>Centro Profesional de Rehabilitación Integral</small></div><div><span id="user"></span> <button onclick="logout()">Salir</button></div></header>
+<nav>
+<button class="nav on" onclick="show('inicio',this)">Inicio</button><button class="nav" onclick="show('pacientes',this)">Pacientes</button><button class="nav" onclick="show('asistencia',this)">Asistencia</button><button class="nav" onclick="show('reportes',this)">Reporte semanal</button>
+</nav>
+<main class="wrap">
+<section id="inicio" class="view on"><h2>Resumen</h2><div class="cardgrid">
+<div class="card">Pacientes registrados<div class="num" id="cp">0</div></div>
+<div class="card">Atenciones esta semana<div class="num" id="ca">0</div></div>
+<div class="card">Nuevos<div class="num" id="cn">0</div></div>
+<div class="card">Seguimientos<div class="num" id="cs">0</div></div>
+<div class="card">Paquetes<div class="num" id="cq">0</div></div>
+</div><div class="panel"><h3>Últimas asistencias</h3><div id="last"></div></div></section>
+
+<section id="pacientes" class="view"><h2>Pacientes</h2><div class="panel"><div class="grid">
+<div><label>Nombre completo</label><input id="pn"></div><div><label>Teléfono</label><input id="pt"></div>
+<div><label>Fecha de ingreso</label><input id="pi" type="date"></div><div><label>Diagnóstico / motivo</label><input id="pd"></div>
+<div><label>Tipo</label><select id="ptipo"><option>Nuevo</option><option>Seguimiento</option><option>Paquete</option></select></div>
+<div><label>Sesiones del paquete</label><input id="ps" type="number" min="0" value="0"></div>
+</div><div class="actions"><button class="primary" onclick="addPatient()">Guardar paciente</button></div></div>
+<div class="panel"><div id="patients"></div></div></section>
+
+<section id="asistencia" class="view"><h2>Asistencia</h2><div class="panel"><div class="grid">
+<div><label>Paciente</label><select id="ap"></select></div><div><label>Fecha</label><input id="af" type="date"></div>
+<div><label>Tipo de atención</label><select id="at"><option>Nuevo</option><option>Seguimiento</option><option>Paquete</option></select></div>
+<div><label>Observaciones</label><input id="ao"></div>
+</div><div class="actions"><button class="primary" onclick="addAttendance()">Registrar asistencia</button></div></div>
+<div class="panel"><div id="attendance"></div></div></section>
+
+<section id="reportes" class="view"><h2>Reporte semanal</h2><div class="panel"><div class="grid">
+<div><label>Desde</label><input id="rd" type="date"></div><div><label>Hasta</label><input id="rh" type="date"></div>
+</div><div class="actions"><button class="primary" onclick="report()">Actualizar</button><button onclick="csv()">Exportar CSV</button></div></div>
+<div class="cardgrid"><div class="card">Total<div class="num" id="rt">0</div></div><div class="card">Nuevos<div class="num" id="rn">0</div></div><div class="card">Seguimientos<div class="num" id="rs">0</div></div><div class="card">Paquetes<div class="num" id="rq">0</div></div></div>
+<div class="panel" id="reportTable"></div></section>
+</main></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+let sb=null, patients=[], attendance=[];
+const $=x=>document.getElementById(x);
+if(window.CPRI_CONFIG && CPRI_CONFIG.url && CPRI_CONFIG.anonKey) sb=supabase.createClient(CPRI_CONFIG.url,CPRI_CONFIG.anonKey);
+function msg(t,good=false){$('loginMsg').innerHTML='<span class="'+(good?'status ok':'status err')+'">'+t+'</span>'}
+async function login(){if(!sb)return msg('Falta configurar Supabase en config.js.');let {data,error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('pass').value});if(error)return msg(error.message);start(data.user)}
+async function signup(){if(!sb)return msg('Falta configurar Supabase en config.js.');let {error}=await sb.auth.signUp({email:$('email').value,password:$('pass').value});if(error)return msg(error.message);msg('Cuenta creada. Si activaste confirmación por correo, revisa tu email.',true)}
+async function logout(){await sb.auth.signOut();location.reload()}
+async function start(u){$('login').style.display='none';$('app').style.display='block';$('user').textContent=u.email;let d=new Date();$('af').value=iso(d);let [a,b]=week();$('rd').value=a;$('rh').value=b;await load();render()}
+async function load(){let p=await sb.from('patients').select('*').order('name');if(p.error)return alert(p.error.message);patients=p.data||[];let a=await sb.from('attendance').select('*').order('date',{ascending:false});if(a.error)return alert(a.error.message);attendance=a.data||[]}
+async function addPatient(){let name=$('pn').value.trim();if(!name)return alert('Escribe el nombre.');let {error}=await sb.from('patients').insert({name,phone:$('pt').value,admission_date:$('pi').value||iso(new Date()),diagnosis:$('pd').value,type:$('ptipo').value,package_sessions:+$('ps').value||0,package_used:0});if(error)return alert(error.message);['pn','pt','pd'].forEach(x=>$(x).value='');$('ps').value=0;await load();render();alert('Paciente guardado.')}
+async function addAttendance(){let pid=$('ap').value;if(!pid)return alert('Selecciona paciente.');let p=patients.find(x=>x.id==pid);let type=$('at').value;let {error}=await sb.from('attendance').insert({patient_id:pid,patient_name:p.name,date:$('af').value,type,notes:$('ao').value});if(error)return alert(error.message);if(type==='Paquete'&&p.type==='Paquete')await sb.from('patients').update({package_used:(p.package_used||0)+1}).eq('id',pid);$('ao').value='';await load();render();alert('Asistencia registrada.')}
+function week(){let d=new Date(),day=d.getDay(),diff=day===0?-6:1-day,i=new Date(d);i.setDate(d.getDate()+diff);let f=new Date(i);f.setDate(i.getDate()+6);return[iso(i),iso(f)]}
+function iso(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function show(id,b){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));$(id).classList.add('on');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('on'));b.classList.add('on');render()}
+function render(){let [a,b]=week(), w=attendance.filter(x=>x.date>=a&&x.date<=b);$('cp').textContent=patients.length;$('ca').textContent=w.length;$('cn').textContent=w.filter(x=>x.type==='Nuevo').length;$('cs').textContent=w.filter(x=>x.type==='Seguimiento').length;$('cq').textContent=w.filter(x=>x.type==='Paquete').length;
+$('ap').innerHTML=patients.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+$('patients').innerHTML=patients.length?`<table><tr><th>Paciente</th><th>Teléfono</th><th>Tipo</th><th>Ingreso</th><th>Restantes</th></tr>${patients.map(p=>`<tr><td>${p.name}</td><td>${p.phone||'-'}</td><td><span class="status">${p.type}</span></td><td>${p.admission_date}</td><td>${p.type==='Paquete'?Math.max(0,(p.package_sessions||0)-(p.package_used||0)):'-'}</td></tr>`).join('')}</table>`:'<p class="muted">No hay pacientes.</p>';
+$('attendance').innerHTML=attendance.length?`<table><tr><th>Fecha</th><th>Paciente</th><th>Tipo</th><th>Observaciones</th></tr>${attendance.map(x=>`<tr><td>${x.date}</td><td>${x.patient_name}</td><td>${x.type}</td><td>${x.notes||'-'}</td></tr>`).join('')}</table>`:'<p class="muted">Sin asistencias.</p>';
+$('last').innerHTML=attendance.slice(0,8).map(x=>`<p><b>${x.date}</b> — ${x.patient_name} — ${x.type}</p>`).join('')||'<p class="muted">Sin registros.</p>'}
+function report(){let a=attendance.filter(x=>x.date>=$('rd').value&&x.date<=$('rh').value);$('rt').textContent=a.length;$('rn').textContent=a.filter(x=>x.type==='Nuevo').length;$('rs').textContent=a.filter(x=>x.type==='Seguimiento').length;$('rq').textContent=a.filter(x=>x.type==='Paquete').length;$('reportTable').innerHTML=`<table><tr><th>Fecha</th><th>Paciente</th><th>Tipo</th></tr>${a.map(x=>`<tr><td>${x.date}</td><td>${x.patient_name}</td><td>${x.type}</td></tr>`).join('')}</table>`}
+function csv(){let a=attendance.filter(x=>x.date>=$('rd').value&&x.date<=$('rh').value),s='Fecha,Paciente,Tipo,Observaciones\\n'+a.map(x=>[x.date,x.patient_name,x.type,x.notes||''].map(v=>'\"'+String(v).replaceAll('\"','\"\"')+'\"').join(',')).join('\\n');let l=document.createElement('a');l.href=URL.createObjectURL(new Blob(['\\ufeff'+s],{type:'text/csv'}));l.download='CPRI_reporte.csv';l.click()}
+if(sb)sb.auth.getSession().then(({data})=>data.session&&start(data.session.user));
+</script>
+</body></html>

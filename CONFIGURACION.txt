@@ -1,0 +1,15 @@
+CPRI V2 — SINCRONIZADA CELULAR + LAPTOP
+
+Esta versión usa Supabase para que los registros puedan quedar en línea.
+
+1) Crea un proyecto en Supabase.
+2) En SQL Editor pega TODO el contenido de supabase.sql y ejecútalo.
+3) En Project Settings > API copia Project URL y anon/public key.
+4) Abre config.js y sustituye:
+   PEGA_AQUI_TU_SUPABASE_URL
+   PEGA_AQUI_TU_SUPABASE_ANON_KEY
+5) Publica esta carpeta en un hosting HTTPS (por ejemplo, un servicio de páginas estáticas).
+6) Abre la misma dirección en tu laptop y celular.
+7) Crea la cuenta de Armando y, si quieres, posteriormente agregamos un usuario específico para recepción.
+
+IMPORTANTE: no pongas la service_role key en config.js. Solo la anon/public key.
